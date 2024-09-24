@@ -1,8 +1,10 @@
 import sys
 from PyQt5.QtWidgets import (QApplication, QWidget, QPushButton, QHBoxLayout, 
                              QVBoxLayout, QMessageBox, QFileDialog)
+from PyQt5.Gui import QPixmap
 from Colorizer import Colorizer
 import cv2
+import os
 
 # TODO : Use MessageBoxes
 
@@ -16,8 +18,30 @@ class ImageColorizer(QWidget):
         self.colorizer.setPath('Model/colorization_deploy_v2.prototxt', 'Model/colorization_release_v2.caffemodel', 'Model/pts_in_hull.npy')
         self.colorizer.loadModel()
         
+        # A counter to store the amount of files colorized
+        self.image_count = int(self.readImageCount())
+        
+        # Variables for the displayed color and gray images
+        self.gray_image = QPixmap()
+        self.color_image = QPixmap()
+        
         # Setting up the UI
         self.initializeUI()
+    
+    # Function to read processed image count data
+    def readImageCount(self):
+        file = open('Assets/count.data', 'r')
+        count = file.read()
+        file.close()
+        
+        return count
+    
+    # Function to write processed image count data
+    def writeImageCount(self):
+        file = open('Assets/count.data', 'w')
+        file.write(str(self.image_count))
+        file.close()
+        
     
     def initializeUI(self):
         # Initial Window Setup
@@ -65,13 +89,13 @@ class ImageColorizer(QWidget):
         
         # Checking if the file is valid
         if file_name:
-            self.gray_image = file_name[0]
+            self.gray_image_path = file_name[0]
             print("Gray Image Succesfully opened")
     
     # Function to save the images after they have been converted
     def saveImageFiles(self):
         # Getting the path where user wish to store the image
-        file_name = QFileDialog.getSaveFileName(self, "Save ImageE", "", "All Files (*)")
+        file_name = QFileDialog.getSaveFileName(self, "Save Image", "", "All Files (*)")
         
         # Checking if the filepath is valid and creating it
         if file_name:
@@ -80,8 +104,22 @@ class ImageColorizer(QWidget):
     
     # Function where actual colorization takes place
     def colorizeImage(self):
-        self.color_image = self.colorizer.colorize(self.gray_image)
+        self.generated_color_image = self.colorizer.colorize(self.gray_image_path)
+        cv2.imwrite(str('Assets/' + str(self.image_count) + '.jpg'), self.generated_color_image)
+        self.image_count += 1
         print("Converted to color image")
+    
+    # Function to display the gray image after it has been opened
+    # This function will delete the saved images generated in a session
+    def clearData(self):
+        pass
+    
+    # Function to clean up and store some variables
+    def closeEvent(self, event):
+        self.writeImageCount()
+        self.clearData()
+        
+    
         
     
 if __name__ == "__main__":
