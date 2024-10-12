@@ -152,7 +152,7 @@ class ImageColorizer(QWidget):
     # Function to clean up and store some variables
     def closeEvent(self, event):
         self.writeImageCount()
-        self.clearData()
+       # self.clearData()
         
     
         
